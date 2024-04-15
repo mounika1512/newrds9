@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports Distribution System</title>
+    <!-- Include Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <!-- Include Font Awesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: lightblue;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: auto; /* Add overflow property to enable scrolling */
+            height: 600px; /* Set the height of the container */
+        }
+        h1 {
+            color: black;
+            text-align: center;
+        }
+        h2 {
+            color: black;
+            text-align: center; 
+        }
+        .input-container {
+            position: relative;
+            margin-bottom: 10px;
+            width: 30%; /* Set the width of the input container */
+        }
+        #datePicker {
+            width: 100%; /* Set the width of the input to fill the container */
+            padding: 8px 30px 8px 8px; /* Adjust padding to accommodate the icon */
+            border: 1px solid black;
+            border-radius: 5px;
+            background-color: #fff;
+            font-size: 14px;
+            box-sizing: border-box; /* Include padding in width calculation */
+        }
+         #statusFilter {
+            width: 100%; /* Set the width of the input to fill the container */
+            padding: 8px 30px 8px 8px; /* Adjust padding to accommodate the icon */
+            border: 1px solid black;
+            border-radius: 5px;
+            background-color: #fff;
+            font-size: 14px;
+            box-sizing: border-box; /* Include padding in width calculation */
+         }
+        .calendar-icon {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            right: 8px;
+            pointer-events: none;
+            z-index: 1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+            background-color: #F2F2F2;
+        }
+        th {
+            background-color: lightblue;
+            color: white;
+            position: sticky; /* Make the headers sticky */
+            top: 0; /* Stick to the top */
+            z-index: 2; /* Ensure the header is above the rows */
+        }
+        .statusDone {
+            color: black;
+        }
+        .statusFail {
+            color: black;
+        }
+        .table-wrapper {
+            max-height: 400px; /* Set a maximum height for the table */
+            overflow-y: auto; /* Enable vertical scrolling */
+        }
+    </style>
+</head>
+<body>
+    <h1>Reports Distribution System</h1>
+    <div class="container"> <!-- Add a container with fixed height for scrolling -->
+        <div class="input-container">
+            <label for="datePicker">Select Date:</label>
+            <!-- Replace input type="date" with this -->
+            <div style="position:relative;">
+                <input type="text" id="datePicker">
+                <!-- Add calendar icon -->
+                <i class="fas fa-calendar-alt calendar-icon"></i>
+            </div>
+        </div>
+        <div class="input-container">
+            <label for="statusFilter">Search by Status:</label>
+            <select id="statusFilter">
+                <option value="">All</option>
+                <option value="Done">Done</option>
+                <option value="Fail">Fail</option>
+            </select>
+        </div>
+        <div class="input-container">
+            <button id="refreshButton">Refresh</button>
+        </div>
+        <br><br>
+        <div class="table-wrapper">
+            <table id="reportTable">
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>As of Date</th>
+                        <th>Batch</th>
+                        <th>Status</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <!-- Data will be dynamically added here -->
+                </tbody>
+            </table>
+        </div>
+    </div> <!-- Close the container -->
+
+    <!-- Include Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+   
+    <script>
+        let currentBatch = 1;
+
+        function generateRandomValue(min, max) {
+            return Math.floor(Math.random() * (max - min + 1) + min);
+        }
+
+        function generateRandomStatus() {
+            const randomNumber = Math.random();
+            if (randomNumber < 0.6) {
+                return 'Done'; // 60% chance for "Done"
+            } else {
+                return 'Fail'; // 40% chance for "Fail"
+            }
+        }
+
+        function clearReport() {
+            const tableBody = document.querySelector('#reportTable tbody');
+            tableBody.innerHTML = ''; // Clear existing rows
+        }
+
+        function generateReport(batchNumber) {
+            const tableBody = document.querySelector('#reportTable tbody');
+            const currentTime = new Date();
+            const startTime = currentTime.toLocaleTimeString();
+            const asOfDate = document.getElementById('datePicker').value; // Get the selected date
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            for (let i = 0; i < Math.floor(Math.random() * 4) + 4; i++) {
+                const task = `Task${tableBody.children.length + 1}`;
+                const value = generateRandomValue(50, 100);
+
+                const row = document.createElement('tr');
+                row.setAttribute('data-status-set', 'false'); // Add attribute to track status set
+                row.innerHTML = `
+                    <td>${task}</td>
+                    <td>${asOfDate}</td> <!-- Set the as of date -->
+                    <td>Batch ${batchNumber}</td>
+                    <td></td> <!-- Empty status cell -->
+                    <td>${startTime}</td>
+                    <td class="endTime"></td>
+                    <td>${value}</td>
+                `;
+                tableBody.appendChild(row);
+            }
+
+            updateEndTimes();
+        }
+
+        function updateEndTimes() {
+            const rows = document.querySelectorAll('#reportTable tbody tr');
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            rows.forEach(row => {
+                const statusCell = row.cells[3];
+                const statusSet = row.getAttribute('data-status-set'); // Get status set attribute
+                if (statusSet === 'false') {
+                    statusCell.textContent = 'Start'; // Set status to "Start" initially
+                }
+
+                setInterval(() => {
+                    const endTimeCell = row.querySelector('.endTime');
+                    const statusCell = row.cells[3];
+                    const statusSet = row.getAttribute('data-status-set'); // Get status set attribute
+                    const status = generateRandomStatus();
+                    const endTimeString = new Date().toLocaleTimeString();
+                    if (!statusFilter || status === statusFilter) {
+                        // Check if status is not already set
+                        if (statusSet === 'false') {
+                            statusCell.textContent = status;
+                            statusCell.classList.remove('statusDone', 'statusFail');
+                            if (status === 'Done') {
+                                statusCell.classList.add('statusDone');
+                            } else if (status === 'Fail') {
+                                statusCell.classList.add('statusFail');
+                            }
+                            row.setAttribute('data-status-set', 'true'); // Set status set attribute to true
+                        }
+                    }
+                    if (endTimeCell.textContent === '') {
+                        endTimeCell.textContent = endTimeString;
+                    }
+                }, 2 * 60000); // 1 minute in milliseconds
+            });
+        }
+
+        function handleRefresh() {
+            currentBatch++;
+            generateReport(currentBatch);
+        }
+
+        function handleFilterChange() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const rows = document.querySelectorAll('#reportTable tbody tr');
+
+            rows.forEach(row => {
+                const statusCell = row.cells[3].textContent; // Get the text content of the status cell
+                row.style.display = ''; // Reset display property for all rows
+
+                if (statusFilter && statusCell !== statusFilter) {
+                    row.style.display = 'none'; // Hide rows that don't match the selected status
+                }
+            });
+        }
+
+        // Initialize Flatpickr
+        flatpickr("#datePicker", {
+            dateFormat: "Y-m-d", // Set date format
+            onChange: function(selectedDates, dateStr) {
+                // Handle date change event
+                clearReport();
+                currentBatch = 1;
+                generateReport(currentBatch);
+            }
+        });
+
+        document.getElementById('statusFilter').addEventListener('change', handleFilterChange);
+        document.getElementById('refreshButton').addEventListener('click', handleRefresh);
+
+        // Initial generation of report
+        generateReport(currentBatch); // Starting with batch 1
+
+        // Generate new batch every minute
+        setInterval(function() {
+            currentBatch++;
+            generateReport(currentBatch);
+        }, 3 * 60 * 1000); // 1 minute in milliseconds
+    </script>
+</body>
+</html>
